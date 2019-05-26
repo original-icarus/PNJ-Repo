@@ -9,17 +9,12 @@
   // Funktion_8: Manuelle Steuerung
   // Funktion_9: Menü
 
+ #include <Servo.h> //Die Servobibliothek wird aufgerufen. Sie wird benötigt, damit die Ansteuerung des Servos vereinfacht wird.
+
   int photosensorAuslesen();
-  int motorSteuerung(int photosensor1, int photosensor2, int photosensor3, int photosensor4);
+  int motorSteuerung();
   int photosensorAnzeige();
-
-
-
-int LEDrechts = 6;
-int LEDlinks = 5;
-int LEDoben = 7;
-int LEDunten = 4;
-  
+  Servo servoblau; //Erstellt für das Programm ein Servo mit dem Namen „servoblau“
 
   
 void setup() {
@@ -31,6 +26,13 @@ pinMode(7, OUTPUT);
 pinMode(4, OUTPUT);
 
 
+//Servo-Setup
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+servoblau.attach(10); //Das Setup enthält die Information, dass das Servo an der Steuerleitung (gelb) mit Pin 10 verbunden wird. Hier ist natürlich auch ein anderer Pin möglich.
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 }
 
 void loop() {
@@ -42,8 +44,9 @@ Serial.begin(9600); //Im Setup beginnt die serielle Kommunikation, damit die Tem
 
 photosensorAnzeige();
 photosensorAuslesen();
+motorSteuerung();
 
-delay(2000);
+delay(5000);
 
 }
 
@@ -57,22 +60,28 @@ int photocellPin2 = 2;     // the cell and 10K pulldown are connected to a2
 int photocellPin3 = 3;     // the cell and 10K pulldown are connected to a3
 int photocellPin4 = 4;     // the cell and 10K pulldown are connected to a4
 
-int photocellReading1;     // the analog reading from the sensor divider for sensor 1 //links oben
-int photocellReading2;     // the analog reading from the sensor divider for sensor 2 //rechts oben
-int photocellReading3;     // the analog reading from the sensor divider for sensor 3 // links unten
-int photocellReading4;     // the analog reading from the sensor divider for sensor 4 //Rechts unten
+
+float photosensor_oben_links;   // the analog reading from the sensor divider for sensor 1 //links oben
+float photosensor_oben_rechts;  // the analog reading from the sensor divider for sensor 2 //rechts oben
+float photosensor_unten_links;  // the analog reading from the sensor divider for sensor 3 // links unten
+float photosensor_unten_rechts; // the analog reading from the sensor divider for sensor 4 //Rechts unten
 
 
+//Angleichungsfaktoren: Gleicht Fotosensoren auf ein Niveau bei gleicher Lichtstärke an, damit sinnvoller Vergleich möglich wird.
+//Ohne den Angleichungsfaktor haben die Lichtsensoren andere Basiswerte, wodurch der Vergleich mittels Differenz einen durchgehenden Ausschlag in eine Richtung ermittleln würde.
+  float n = 200/189;
+  float m = 200/220;
+  float j = 200/220;
+  float k = 200/174;
 
 int photosensorAuslesen(){
 
-  photocellReading1 = analogRead(photocellPin1); 
-  photocellReading2 = analogRead(photocellPin2); 
-  photocellReading3 = analogRead(photocellPin3); 
-  photocellReading4 = analogRead(photocellPin4);
+  photosensor_oben_links = n*analogRead(photocellPin1); 
+  photosensor_oben_rechts = m*analogRead(photocellPin2); 
+  photosensor_unten_links = j*analogRead(photocellPin3); 
+  photosensor_unten_rechts = k*analogRead(photocellPin4);
 
-motorSteuerung(photocellReading1, photocellReading2, photocellReading3, photocellReading4);
-
+return 0;
 }
 
 
@@ -87,31 +96,40 @@ motorSteuerung(photocellReading1, photocellReading2, photocellReading3, photocel
 
 
 
-int motorSteuerung(int photosensor1, int photosensor2, int photosensor3, int photosensor4)
+
+
+//Motorsteuerung 
+
+
+int a = 90;
+
+
+int motorSteuerung()
 {
+int photosensor_oben = photosensor_oben_links + photosensor_oben_rechts;
+int photosensor_unten = photosensor_unten_links + photosensor_unten_rechts;
 
-if (photosensor1 - photosensor2 <-10)
-  {
-    digitalWrite (LEDrechts, HIGH);
-    digitalWrite(LEDlinks, LOW);  
-  }
-else if (photosensor2 - photosensor1 <-10)
-  {
-    digitalWrite(LEDlinks, HIGH);  
-    digitalWrite (LEDrechts, LOW); 
-  }
 
+if (photosensor_oben - photosensor_unten <-10 )
+  {
+    a= a+10;
+servoblau.write(a); //Position 1 ansteuern mit dem Winkel 0°
+  }
+else if (photosensor_unten - photosensor_oben <-10)
+  {
+    a= a-10;
+servoblau.write(a); //Position 2 ansteuern mit dem Winkel 90°
+  }
+/*
 if (photosensor3 - photosensor4 <-10)
   {
-    digitalWrite (LEDunten, HIGH);
-     digitalWrite(LEDoben, LOW);  
+//Stepper
   }
 else if (photosensor4 - photosensor3 <-10)
   {
-    digitalWrite(LEDoben, HIGH);  
-    digitalWrite (LEDunten, LOW); 
+//Stepper
   }
-  
+ */
 return 0;
 
 }
@@ -132,17 +150,20 @@ return 0;
 
    
  */
+
+
+//Photosensor-Anzeige
 int photosensorAnzeige()
 {
   
   Serial.print("Analog reading oben links = ");
-  Serial.println(photocellReading1);     // the raw analog reading
+  Serial.println(photosensor_oben_links);     // the raw analog reading
   Serial.print("Analog reading oben rechts = ");
-  Serial.println(photocellReading2);     // the raw analog reading
+  Serial.println(photosensor_oben_rechts);     // the raw analog reading
   Serial.print("Analog reading unten links = ");
-  Serial.println(photocellReading3);     // the raw analog reading
+  Serial.println(photosensor_unten_links);     // the raw analog reading
   Serial.print("Analog reading unten rechts = ");
-  Serial.println(photocellReading4);     // the raw analog reading
+  Serial.println(photosensor_unten_rechts);     // the raw analog reading
  
   // LED gets brighter the darker it is at the sensor
   // that means we have to -invert- the reading from 0-1023 back to 1023-0
