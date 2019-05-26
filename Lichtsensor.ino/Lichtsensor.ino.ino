@@ -69,10 +69,10 @@ float photosensor_unten_rechts; // the analog reading from the sensor divider fo
 
 //Angleichungsfaktoren: Gleicht Fotosensoren auf ein Niveau bei gleicher Lichtstärke an, damit sinnvoller Vergleich möglich wird.
 //Ohne den Angleichungsfaktor haben die Lichtsensoren andere Basiswerte, wodurch der Vergleich mittels Differenz einen durchgehenden Ausschlag in eine Richtung ermittleln würde.
-  float n = 200/189;
-  float m = 200/220;
-  float j = 200/220;
-  float k = 200/174;
+  float n = 1.0;
+  float m = 0.88;
+  float j = 0.98;
+  float k = 1.06;
 
 int photosensorAuslesen(){
 
@@ -110,7 +110,7 @@ int photosensor_oben = photosensor_oben_links + photosensor_oben_rechts;
 int photosensor_unten = photosensor_unten_links + photosensor_unten_rechts;
 
 
-if (photosensor_oben - photosensor_unten <-10 )
+if (photosensor_oben - photosensor_unten <-100 )
   {
     a= a+10;
 servoblau.write(a); //Position 1 ansteuern mit dem Winkel 0°
